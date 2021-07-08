@@ -1,0 +1,71 @@
+{% import 'panel.jinja2' as lib %}
+local grafana = import 'grafonnet/grafana.libsonnet';
+local dashboard = grafana.dashboard;
+{% if templates != [] %}local template = grafana.template;{% endif %}
+{%- for t in import_list|sort %}
+{% if t == 'singlestat' %}local singlestat = grafana.singlestat;{%- endif -%}
+{% if t == 'graph' %}local graphPanel = grafana.graphPanel;{%- endif -%}
+{% if t == 'heatmap' %}local heatmapPanel = grafana.heatmapPanel;{%- endif -%}
+{% if t == 'alertlist' %}local alertlist = grafana.alertlist;{%- endif -%}
+{% if t == 'table' %}local tablePanel = grafana.tablePanel;{%- endif -%}
+{% if t == 'text' %}local text = grafana.text;{%- endif -%}
+{% if t == 'row' %}local rowPanel = grafana.row;{%- endif -%}
+{% if t == 'stat' %}local statPanel = grafana.statPanel;{%- endif -%}
+{% if t == 'gauge' %}local gaugePanel = grafana.gaugePanel;{%- endif -%}
+{% endfor %}
+local prometheus = grafana.prometheus;
+
+
+{ grafanaDashboards +:: {
+'{{ dashboard_name }}' ::
+dashboard.new(
+{% for k,v in dashboard_metadata.items() -%}
+    {{ k }}={{ v | tojson | safe }},
+{% endfor -%}
+)
+.addTemplates([
+{% for template in templates -%}
+    {% if template['type'] == "datasource" -%}
+        template.datasource(
+        {% for k,v in template.items() -%}
+            {% if k not in [ 'type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        ),
+    {% elif template["type"] == "interval" -%}
+        template.interval(
+        {% for k,v in template.items() -%}
+            {% if k not in [ 'type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        ),
+    {% elif template["type"] == "custom" -%}
+        template.custom(
+        {% for k,v in template.items() -%}
+            {% if k not in [ 'type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        ),
+    {% else -%}
+        template.new(
+        {% for k,v in template.items() -%}
+            {% if k not in [ 'targets','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        ),
+    {% endif -%}
+{% endfor -%}
+])
+
+
+.addPanels( [
+{% for panel in panels -%}
+{{ lib.gen_panel(panel) }}
+{%- endfor -%}
+])
+}
+}

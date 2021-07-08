@@ -1,0 +1,210 @@
+{% macro gen_panel(panel) -%}
+    {#-  ROW  -#}
+    {% if panel['type'] == "row" -%}
+        rowPanel.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in [ 'panels','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        )
+        {%- if  'panels' in panel and panel['panels'] != [] -%}
+            .addPanels( [
+            {% for p in panel['panels'] -%}
+            {{ gen_panel(p) }}
+            {%- endfor -%}
+            ])
+        {%- endif -%},
+
+        {#-    ALERTLIST  -#}
+    {% elif panel['type'] == "alertlist" -%}
+        alertlist.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in [ 'targets','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        ),
+        {#-    TEXT  -#}
+    {% elif panel['type'] == "text" -%}
+        text.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in [ 'targets','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        ),
+        {#-         GRAPH          -#}
+    {% elif panel['type'] == "graph" -%}
+        graphPanel.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in [ 'targets','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        )
+        {#-    GRAPH TARGETS  -#}
+        {% if 'targets' in panel -%}
+            {% for t in panel['targets'] -%}
+                .addTarget(
+                prometheus.target(
+                {% for k,v in t.items() -%}
+                    {{ k }}={{ v | tojson | safe }},
+                {% endfor -%}
+                ))
+                {%- if  loop.last -%}
+                    ,
+                {% endif %}
+            {% endfor -%}
+        {% endif -%}
+        {#-         HEATMAP            -#}
+    {% elif panel['type'] == "heatmap" -%}
+        heatmapPanel.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in [ 'targets','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        )
+        {#-    HEATMAP TARGETS  -#}
+        {% if 'targets' in panel -%}
+            {% for t in panel['targets'] -%}
+                .addTarget(
+                prometheus.target(
+                {% for k,v in t.items() -%}
+                    {{ k }}={{ v | tojson | safe }},
+                {% endfor -%}
+                ))
+                {%- if  loop.last -%}
+                    ,
+                {% endif %}
+            {% endfor -%}
+        {% endif -%}
+{#-   STAT     -#}
+    {% elif panel['type'] == "stat" -%}
+        statPanel.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in ['targets','thresholds','mappings','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        )
+        {#-    STAT Threshold  -#}
+        {% if 'thresholds' in panel -%}
+            {% for t in panel['thresholds'] -%}
+                .addThreshold({{ t | tojson }})
+            {% endfor -%}
+        {% endif -%}
+        {#-     STAT MAPPINGS  -#}
+        {% if 'mappings' in panel -%}
+            {% for t in panel['mappings'] -%}
+                .addMapping({{ t | tojson }})
+            {% endfor -%}
+        {% endif -%}
+        {#-    STAT TARGETS  -#}
+        {% if 'targets' in panel -%}
+            {% for t in panel['targets'] -%}
+                .addTarget(
+                prometheus.target(
+                {% for k,v in t.items() -%}
+                    {{ k }}={{ v | tojson | safe }},
+                {% endfor -%}
+                ))
+                {%- if  loop.last -%}
+                    ,
+                {% endif %}
+            {% endfor -%}
+        {% endif -%}
+        {#-           GAUAGE           -#}
+    {% elif panel['type'] == "gauge" -%}
+        gaugePanel.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in ['targets','thresholds','mappings','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        )
+        {#-    GAUAGE Threshold  -#}
+        {% if 'thresholds' in panel -%}
+            {% for t in panel['thresholds'] -%}
+                .addThreshold({{ t | tojson }})
+            {% endfor -%}
+        {% endif -%}
+        {#-     GAUGE MAPPINGS  -#}
+        {% if 'mappings' in panel -%}
+            {% for t in panel['mappings'] -%}
+                .addMapping({{ t | tojson }})
+            {% endfor -%}
+        {% endif -%}
+        {#-    GAUGE TARGETS  -#}
+        {% if 'targets' in panel -%}
+            {% for t in panel['targets'] -%}
+                .addTarget(
+                prometheus.target(
+                {% for k,v in t.items() -%}
+                    {{ k }}={{ v | tojson | safe }},
+                {% endfor -%}
+                ))
+                {%- if  loop.last -%}
+                    ,
+                {% endif %}
+            {% endfor -%}
+        {% endif -%}
+        {#-    TABLE  -#}
+    {% elif panel['type'] == "table" -%}
+        tablePanel.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in ['targets','columns','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        )
+        {#-     TABLE COLUMNS    -#}
+        {% if 'columns' in panel -%}
+            {% for t in panel['columns'] -%}
+                .addColumn(
+                {% for k,v in t.items() -%}
+                    {{ k }}={{ v | tojson | safe }},
+                {% endfor -%}
+                )
+            {% endfor -%}
+        {% endif -%}
+        {#-     TABLE TARGETS    -#}
+        {% if 'targets' in panel -%}
+            {% for t in panel['targets'] -%}
+                .addTarget(
+                prometheus.target(
+                {% for k,v in t.items() -%}
+                    {{ k }}={{ v | tojson | safe }},
+                {% endfor -%}
+                ))
+                {%- if  loop.last -%}
+                    ,
+                {% endif %}
+            {% endfor -%}
+        {% endif -%}
+        {#-     SINGLESTAT    -#}
+    {% elif panel['type'] == "singlestat" -%}
+        singlestat.new(
+        {% for k,v in panel.items() -%}
+            {% if k not in [ 'targets','type'] -%}
+                {{ k }}={{ v | tojson | safe }},
+            {% endif -%}
+        {% endfor -%}
+        )
+        {#-     SINGLESTAT Targets    -#}
+        {% if 'targets' in panel -%}
+            {% for t in panel['targets'] -%}
+                .addTarget(
+                prometheus.target(
+                {% for k,v in t.items() -%}
+                    {{ k }}={{ v | tojson | safe }},
+                {% endfor -%}
+                ))
+                {%- if  loop.last -%}
+                    ,
+                {% endif %}
+            {% endfor -%}
+        {% endif -%}
+    {% endif -%}
+{%- endmacro %}
