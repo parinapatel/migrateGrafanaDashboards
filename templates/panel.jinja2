@@ -3,24 +3,25 @@
     {% if panel['type'] == "row" -%}
         rowPanel.new(
         {% for k,v in panel.items() -%}
-            {% if k not in [ 'panels','type'] -%}
+            {% if k not in [ 'gridPos','panels','type'] -%}
                 {{ k }}={{ v | tojson | safe }},
             {% endif -%}
         {% endfor -%}
         )
         {%- if  'panels' in panel and panel['panels'] != [] -%}
-            .addPanels( [
             {% for p in panel['panels'] -%}
-            {{ gen_panel(p) }}
+                .addPanel(
+                {{ gen_panel(p) }}
+                {{ p['gridPos'] }}
+                )
             {%- endfor -%}
-            ])
         {%- endif -%},
 
         {#-    ALERTLIST  -#}
     {% elif panel['type'] == "alertlist" -%}
         alertlist.new(
         {% for k,v in panel.items() -%}
-            {% if k not in [ 'targets','type'] -%}
+            {% if k not in [ 'gridPos','targets','type'] -%}
                 {{ k }}={{ v | tojson | safe }},
             {% endif -%}
         {% endfor -%}
@@ -29,7 +30,7 @@
     {% elif panel['type'] == "text" -%}
         text.new(
         {% for k,v in panel.items() -%}
-            {% if k not in [ 'targets','type'] -%}
+            {% if k not in [ 'gridPos','targets','type'] -%}
                 {{ k }}={{ v | tojson | safe }},
             {% endif -%}
         {% endfor -%}
@@ -38,7 +39,7 @@
     {% elif panel['type'] == "graph" -%}
         graphPanel.new(
         {% for k,v in panel.items() -%}
-            {% if k not in [ 'targets','type'] -%}
+            {% if k not in [ 'gridPos','targets','type'] -%}
                 {{ k }}={{ v | tojson | safe }},
             {% endif -%}
         {% endfor -%}
@@ -54,14 +55,14 @@
                 ))
                 {%- if  loop.last -%}
                     ,
-                {% endif %}
+                {% endif -%}
             {% endfor -%}
         {% endif -%}
         {#-         HEATMAP            -#}
     {% elif panel['type'] == "heatmap" -%}
         heatmapPanel.new(
         {% for k,v in panel.items() -%}
-            {% if k not in [ 'targets','type'] -%}
+            {% if k not in [ 'gridPos','targets','type'] -%}
                 {{ k }}={{ v | tojson | safe }},
             {% endif -%}
         {% endfor -%}
@@ -77,14 +78,14 @@
                 ))
                 {%- if  loop.last -%}
                     ,
-                {% endif %}
+                {% endif -%}
             {% endfor -%}
         {% endif -%}
-{#-   STAT     -#}
+        {#-   STAT     -#}
     {% elif panel['type'] == "stat" -%}
         statPanel.new(
         {% for k,v in panel.items() -%}
-            {% if k not in ['targets','thresholds','mappings','type'] -%}
+            {% if k not in ['gridPos','targets','thresholds','mappings','type'] -%}
                 {{ k }}={{ v | tojson | safe }},
             {% endif -%}
         {% endfor -%}
@@ -112,14 +113,14 @@
                 ))
                 {%- if  loop.last -%}
                     ,
-                {% endif %}
+                {% endif -%}
             {% endfor -%}
         {% endif -%}
         {#-           GAUAGE           -#}
     {% elif panel['type'] == "gauge" -%}
         gaugePanel.new(
         {% for k,v in panel.items() -%}
-            {% if k not in ['targets','thresholds','mappings','type'] -%}
+            {% if k not in ['gridPos','targets','thresholds','mappings','type'] -%}
                 {{ k }}={{ v | tojson | safe }},
             {% endif -%}
         {% endfor -%}
@@ -147,15 +148,15 @@
                 ))
                 {%- if  loop.last -%}
                     ,
-                {% endif %}
+                {% endif -%}
             {% endfor -%}
         {% endif -%}
         {#-    TABLE  -#}
     {% elif panel['type'] == "table" -%}
         tablePanel.new(
         {% for k,v in panel.items() -%}
-            {% if k not in ['targets','columns','type'] -%}
-                {{ k }}={{ v | tojson | safe }},
+            {% if k not in ['gridPos','targets','columns','type'] -%}
+                {{ k }}={{ v | tojson(indent=4) | safe }},
             {% endif -%}
         {% endfor -%}
         )
@@ -180,14 +181,14 @@
                 ))
                 {%- if  loop.last -%}
                     ,
-                {% endif %}
+                {% endif -%}
             {% endfor -%}
         {% endif -%}
         {#-     SINGLESTAT    -#}
     {% elif panel['type'] == "singlestat" -%}
         singlestat.new(
         {% for k,v in panel.items() -%}
-            {% if k not in [ 'targets','type'] -%}
+            {% if k not in ['gridPos', 'targets','type'] -%}
                 {{ k }}={{ v | tojson | safe }},
             {% endif -%}
         {% endfor -%}
@@ -203,7 +204,7 @@
                 ))
                 {%- if  loop.last -%}
                     ,
-                {% endif %}
+                {% endif -%}
             {% endfor -%}
         {% endif -%}
     {% endif -%}

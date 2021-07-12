@@ -1,7 +1,9 @@
-import json
-import jinja2
-import os
 import argparse
+import json
+import os
+import subprocess
+
+import jinja2
 
 
 def get_dashboard_metadata(dashboard: dict, override_metadata=None):
@@ -41,9 +43,9 @@ def render_jinja(template_path, dashboard_metadata, templates, panels, **kwargs)
 
 def get_templates(dashboard: dict):
     templates = []
-    common = ["hide", "name", "query", "regex", "type"]
+    common = ["hide", "name", "query", "regex", "type", "format"]
     keys = {
-        "datasource": common + ['current'],
+        "datasource": common + ['current', 'allValue'],
         'interval': ['hide', 'name', 'query', 'label', 'type', 'current'],
         "query": common + ["datasource", "label", "multi", "sort"],
         "custom": common + ['label', 'type', 'multi', 'valuelabels', 'current']
@@ -68,11 +70,11 @@ def get_templates(dashboard: dict):
 
 def get_panels(dashboard: dict):
     panels = []
-    common = ['title', 'transparent', 'span', 'description', 'type']
+    common = ['title', 'transparent', 'span', 'description', 'type', 'gridPos']
     panel_type = {
         'alertlist': common + [],
         'graph': common + ['bar', 'datasource', 'fill', 'fillGradient', 'percentage', 'pointradius',
-                           'points', 'stack', 'targets', 'nullPointMode'],
+                           'points', 'stack', 'targets', 'nullPointMode', 'timeFrom'],
         'barGauge': common + [],
         'gauge': common + ['transparent', 'colors', 'datasource', 'targets'],
         'heatmap': common + ['datasource', 'dataFormat', 'hideZeroBuckets', 'highlightCards',
@@ -142,6 +144,7 @@ def get_panels(dashboard: dict):
             elif panel['type'] == 'row':
                 if 'panels' in panel:
                     default_panel = {
+                        'collapse': panel['collapsed'] or False,
                         'panels': get_panels({
                             "panels": panel['panels']
                         })
@@ -200,8 +203,6 @@ def get_panels(dashboard: dict):
 
             else:
                 default_panel = {}
-            for k, v in default_panel.items():
-                default_panel[k] = v
             for k, v in panel.items():
                 if k in panel_type[panel['type']]:
                     if k == 'targets':
@@ -233,17 +234,35 @@ def get_panels(dashboard: dict):
                             default_panel['styles'].append(
                                 s
                             )
+                    elif k == 'timeFrom':
+                        default_panel['time_from'] = v
+                        # panel.pop('timeFrom')
                     else:
                         default_panel.update(
                             {k: v}
                         )
+
             panels.append(default_panel)
     return panels
 
 
-# TODO Get Annotations included
-def get_annotations(dashboard: dict):
-    raise NotImplementedError
+def get_links(dashboard: dict):
+    links = []
+    common = ["title", "icon", "tags", "keepTime", "url", "type"]
+    if 'links' in dashboard.keys():
+        link: dict
+        for link in dashboard['links']:
+            default_link = {
+                "targetBlank": True,
+                "asDropdown": True
+            }
+            for k, v in link.items():
+                if k in common:
+                    default_link.update({
+                        k: v
+                    })
+            links.append(default_link)
+    return links
 
 
 def get_types(dashboard):
@@ -264,20 +283,40 @@ def load_dashboards(file):
         return dashboard
 
 
+def format_file(file):
+    return subprocess.run('jsonnetfmt -i {}'.format(file), shell=True).returncode
+
+
+def render_file(file, dashboard_name, jsonnet_lib_path='vendor', output_dir='rendor'):
+    return subprocess.run('jsonnet -J {} -e \'(import "{}").grafanaDashboards.{}\' --output-file {}'
+                          .format(jsonnet_lib_path, file, dashboard_name,
+                                  '{}/{}.json'.format(output_dir, dashboard_name)),
+                          shell=True).returncode
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Migrate Grafana Dashboards to jsonnet.')
-    parser.add_argument('--dir','-d',required=True,help='path for dashboard directory')
+    parser.add_argument('--dir', '-d', required=True, help='Path for dashboard directory')
+    parser.add_argument('--output', '-o', required=True, help='Output direcotry for jsonnet dashboards')
+    parser.add_argument('--build', required=False, action='store_true', help="Build Jsonnet dashboards")
+    parser.add_argument('--build-dir', default='render', help="Rendered Dashboard Directory")
+    # parser.add_argument('--grafana-url','-u',)
 
     args = parser.parse_args()
     for file in os.listdir(args.dir):
         if file.endswith('.json'):
-            dashboard_json = os.path.abspath(args.dir + '/'+ file)
+            dashboard_json = os.path.abspath(os.path.join(args.dir, file))
+            output_jsonnet = os.path.abspath(os.path.join(args.output, file.replace('.json', '.jsonnet')))
             d = load_dashboards(dashboard_json)
             metadata = get_dashboard_metadata(d)
             t = get_templates(d)
             p = get_panels(d)
             ty = get_types(d)
+            l = get_links(d)
             r = render_jinja('dashboard_template.jinja2', metadata, t, p,
-                             dashboard_name=file.split('.')[0].title().replace('-', ''), import_list=ty)
-            with open('{}'.format(dashboard_json.replace('.json', '.jsonnet')), 'w') as f:
+                             dashboard_name=file.split('.')[0].title().replace('-', ''), import_list=ty, links=l)
+            with open('{}'.format(output_jsonnet), 'w') as f:
                 f.write(r)
+            format_file(output_jsonnet)
+            if args.build:
+                render_file(output_jsonnet, file.split('.')[0].title().replace('-', ''), output_dir=args.build_dir)
