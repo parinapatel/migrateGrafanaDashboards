@@ -11,8 +11,7 @@
         {%- if  'panels' in panel and panel['panels'] != [] -%}
             {% for p in panel['panels'] -%}
                 .addPanel(
-                {{ gen_panel(p) }}
-                {{ p['gridPos'] }}
+                {{ gen_panel(p) }}{{ p['gridPos'] }}
                 )
             {%- endfor -%}
         {%- endif -%},

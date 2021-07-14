@@ -287,10 +287,10 @@ def format_file(file):
     return subprocess.run('jsonnetfmt -i {}'.format(file), shell=True).returncode
 
 
-def render_file(file, dashboard_name, jsonnet_lib_path='vendor', output_dir='rendor'):
-    return subprocess.run('jsonnet -J {} -e \'(import "{}").grafanaDashboards.{}\' --output-file {}'
+def validate_render_file(file, dashboard_name, jsonnet_lib_path='vendor'):
+    return subprocess.run('jsonnet -J {} -e \'(import "{}").grafanaDashboards.{}\' --output-file /dev/null'
                           .format(jsonnet_lib_path, file, dashboard_name,
-                                  '{}/{}.json'.format(output_dir, dashboard_name)),
+                                 ),
                           shell=True).returncode
 
 
@@ -299,7 +299,6 @@ if __name__ == '__main__':
     parser.add_argument('--dir', '-d', required=True, help='Path for dashboard directory')
     parser.add_argument('--output', '-o', required=True, help='Output direcotry for jsonnet dashboards')
     parser.add_argument('--build', required=False, action='store_true', help="Build Jsonnet dashboards")
-    parser.add_argument('--build-dir', default='render', help="Rendered Dashboard Directory")
     # parser.add_argument('--grafana-url','-u',)
 
     args = parser.parse_args()
@@ -315,8 +314,8 @@ if __name__ == '__main__':
             l = get_links(d)
             r = render_jinja('dashboard_template.jinja2', metadata, t, p,
                              dashboard_name=file.split('.')[0].title().replace('-', ''), import_list=ty, links=l)
-            with open('{}'.format(output_jsonnet), 'w') as f:
-                f.write(r)
+            # with open('{}'.format(output_jsonnet), 'w') as f:
+            #     f.write(r)
             format_file(output_jsonnet)
             if args.build:
-                render_file(output_jsonnet, file.split('.')[0].title().replace('-', ''), output_dir=args.build_dir)
+                validate_render_file(output_jsonnet, file.split('.')[0].title().replace('-', ''))

@@ -68,8 +68,7 @@ dashboard.new(
 
 {% for panel in panels -%}
     .addPanel(
-    {{ lib.gen_panel(panel) }}
-    {{ panel['gridPos'] }}
+    {{ lib.gen_panel(panel) }}{{ panel['gridPos'] }}
     )
 {% endfor -%}
 }
